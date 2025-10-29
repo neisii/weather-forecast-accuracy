@@ -1,0 +1,61 @@
+{
+  "version": "2025-10-29",
+  "updatedAt": "2025-10-29T00:00:00.000Z",
+  "weights": {
+    "temperature": {
+      "openmeteo": 0.45,
+      "openweather": 0.4,
+      "weatherapi": 0.15
+    },
+    "humidity": {
+      "weatherapi": 0.7,
+      "openweather": 0.3
+    },
+    "windSpeed": {
+      "openmeteo": 0.6,
+      "openweather": 0.25,
+      "weatherapi": 0.15
+    },
+    "condition": {
+      "openweather": 1.0
+    }
+  },
+  "performance": {
+    "providers": {
+      "openmeteo": {
+        "temperatureMAE": 1.86,
+        "windSpeedMAE": 0.47,
+        "humidityMAE": 0,
+        "conditionAccuracy": 0,
+        "sampleSize": 9
+      },
+      "openweather": {
+        "temperatureMAE": 2.03,
+        "windSpeedMAE": 0.64,
+        "humidityMAE": 13.2,
+        "conditionAccuracy": 66.7,
+        "sampleSize": 9
+      },
+      "weatherapi": {
+        "temperatureMAE": 2.13,
+        "windSpeedMAE": 0.64,
+        "humidityMAE": 11.6,
+        "conditionAccuracy": 55.6,
+        "sampleSize": 9
+      }
+    },
+    "customAI": {
+      "temperatureMAE": 1.86,
+      "windSpeedMAE": 0.47,
+      "humidityMAE": 11.6,
+      "conditionAccuracy": 66.7,
+      "overallScore": 85.2
+    }
+  },
+  "analysisPeriod": {
+    "from": "2025-10-20",
+    "to": "2025-10-28",
+    "days": 9
+  },
+  "changeReason": "Initial weights from 9-day backtesting (Phase 8-9)"
+}

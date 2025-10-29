@@ -1,0 +1,134 @@
+name: Update AI Weights
+
+on:
+  # 매주 일요일 00:00 UTC (09:00 KST)
+  schedule:
+    - cron: '0 0 * * 0'
+
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      auto_commit:
+        description: 'Auto commit changes'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  update-weights:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 이력 가져오기
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd 02-weather-app
+          npm ci
+
+      - name: Install tsx (TypeScript executor)
+        run: npm install -g tsx
+
+      - name: Run AI weights update
+        env:
+          AUTO_COMMIT: ${{ github.event.inputs.auto_commit || 'true' }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          cd 02-weather-app
+          tsx scripts/update-ai-weights.ts
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          cd 02-weather-app
+          if [[ -n $(git status --porcelain data/ai-weights/) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          cd 02-weather-app
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          VERSION=$(date -u +%Y-%m-%d)
+
+          git add data/ai-weights/
+          git commit -m "chore(ai): auto-update weights $VERSION
+
+          🤖 Automated AI weights update based on 30-day analysis
+
+          - Analysis period: last 30 days
+          - Optimization method: statistical (inverse-error weighting)
+          - Updated by: GitHub Actions
+          - Workflow: update-ai-weights.yml"
+
+          git push
+
+      - name: Create summary
+        if: always()
+        run: |
+          cd 02-weather-app
+
+          if [ -f "data/ai-weights/latest.json" ]; then
+            echo "## 🤖 AI Weights Update Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Extract key metrics from latest.json
+            VERSION=$(jq -r '.version' data/ai-weights/latest.json)
+            TEMP_MAE=$(jq -r '.performance.customAI.temperatureMAE' data/ai-weights/latest.json)
+            WIND_MAE=$(jq -r '.performance.customAI.windSpeedMAE' data/ai-weights/latest.json)
+            OVERALL=$(jq -r '.performance.customAI.overallScore' data/ai-weights/latest.json)
+
+            echo "### 📊 Performance Metrics" >> $GITHUB_STEP_SUMMARY
+            echo "- **Version**: $VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "- **Temperature MAE**: ${TEMP_MAE}°C" >> $GITHUB_STEP_SUMMARY
+            echo "- **Wind Speed MAE**: ${WIND_MAE} m/s" >> $GITHUB_STEP_SUMMARY
+            echo "- **Overall Score**: ${OVERALL}/100" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Check if improvement data exists
+            if jq -e '.performance.improvement' data/ai-weights/latest.json > /dev/null; then
+              TEMP_IMP=$(jq -r '.performance.improvement.temperature' data/ai-weights/latest.json)
+              WIND_IMP=$(jq -r '.performance.improvement.windSpeed' data/ai-weights/latest.json)
+              OVERALL_IMP=$(jq -r '.performance.improvement.overall' data/ai-weights/latest.json)
+
+              echo "### 📈 Improvement vs Previous Version" >> $GITHUB_STEP_SUMMARY
+              echo "- **Temperature**: ${TEMP_IMP}%" >> $GITHUB_STEP_SUMMARY
+              echo "- **Wind Speed**: ${WIND_IMP}%" >> $GITHUB_STEP_SUMMARY
+              echo "- **Overall**: ${OVERALL_IMP}%" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            echo "✅ Weights updated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No weights file found - update may have failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-weights-${{ github.run_number }}
+          path: |
+            02-weather-app/data/ai-weights/
+            02-weather-app/data/analysis/latest-optimization.json
+          retention-days: 90

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useWeatherStore } from '@/stores/weather';
-import { customWeatherPredictor } from '@/services/weather/CustomWeatherPredictor';
+import { CustomWeatherPredictor } from '@/services/weather/CustomWeatherPredictor';
+import { useAIWeights } from '@/composables/useAIWeights';
 import CustomWeatherDisplay from '@/components/CustomWeatherDisplay.vue';
 import ProviderComparison from '@/components/ProviderComparison.vue';
 import ConfidenceBadge from '@/components/ConfidenceBadge.vue';
@@ -11,6 +12,10 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 
 const weatherStore = useWeatherStore();
+const { weights, loading: weightsLoading, source, info } = useAIWeights();
+
+// 동적 가중치를 사용하는 predictor
+const predictor = computed(() => new CustomWeatherPredictor(weights.value));
 
 const cityName = ref('');
 const isLoading = ref(false);
@@ -27,8 +32,8 @@ const handleSearch = async (city: string) => {
     // Get weather from all 3 providers
     const allProvidersData = await weatherStore.weatherService.getAllProvidersWeather(city);
 
-    // Generate custom prediction
-    const prediction = customWeatherPredictor.predict(allProvidersData);
+    // Generate custom prediction with dynamic weights
+    const prediction = predictor.value.predict(allProvidersData);
     customPrediction.value = prediction;
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unknown error';

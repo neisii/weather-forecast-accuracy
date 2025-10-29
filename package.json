@@ -10,7 +10,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "analyze:enhanced": "tsx scripts/analyze-accuracy-enhanced.ts",
+    "update:weights": "tsx scripts/update-ai-weights.ts"
   },
   "dependencies": {
     "axios": "^1.12.2",
