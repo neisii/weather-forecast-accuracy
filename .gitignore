@@ -27,3 +27,6 @@ dist-ssr
 docs/session-context-*.txt
 **/session-context-*.txt
 coverage/
+
+# Generated analysis files
+data/analysis/latest-optimization.json
