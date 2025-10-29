@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 
 const weatherStore = useWeatherStore();
-const { weights, loading: weightsLoading, source, info } = useAIWeights();
+const { weights } = useAIWeights();
 
 // 동적 가중치를 사용하는 predictor
 const predictor = computed(() => new CustomWeatherPredictor(weights.value));
