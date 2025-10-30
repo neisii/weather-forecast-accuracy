@@ -1,0 +1,50 @@
+{
+  "date": "2025-10-27",
+  "collected_at": "2025-10-27T00:49:54.687Z",
+  "target_date": "2025-10-28",
+  "city": "서울",
+  "predictions": {
+    "openweather": {
+      "temp_max": 12.19,
+      "temp_min": 7.11,
+      "temp_day": 11.252500000000001,
+      "temp_night": 9.945,
+      "condition_main": "Clear",
+      "condition_description": "clear sky",
+      "condition_description_ko": "맑음",
+      "condition_icon": "01n",
+      "humidity": 39,
+      "wind_speed": 1.86875,
+      "precipitation_probability": 0,
+      "predicted_at": "2025-10-27T00:49:55.018Z"
+    },
+    "weatherapi": {
+      "temp_max": 11.7,
+      "temp_min": 4.4,
+      "temp_day": 8,
+      "temp_night": 8,
+      "condition_main": "Sunny",
+      "condition_description": "Sunny",
+      "condition_description_ko": "Sunny",
+      "condition_icon": "01d",
+      "humidity": 27,
+      "wind_speed": 3.888888888888889,
+      "precipitation_probability": 0,
+      "predicted_at": "2025-10-27T00:49:55.552Z"
+    },
+    "openmeteo": {
+      "temp_max": 10.6,
+      "temp_min": 1.8,
+      "temp_day": 6.2,
+      "temp_night": 1.8,
+      "condition_main": "맑음",
+      "condition_description": "맑음",
+      "condition_description_ko": "맑음",
+      "condition_icon": "01d",
+      "humidity": 0,
+      "wind_speed": 1.8333333333333333,
+      "precipitation_probability": 0,
+      "predicted_at": "2025-10-27T00:49:56.027Z"
+    }
+  }
+}

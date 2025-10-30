@@ -1,0 +1,58 @@
+#!/bin/sh
+
+echo "🔍 Scanning staged files for exposed secrets..."
+echo ""
+
+# Check if there are any staged files
+STAGED_FILES=$(git diff --cached --name-only)
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No files staged for commit"
+  exit 0
+fi
+
+# Pattern 1: Long alphanumeric strings (potential API keys)
+# Excluding lines with asterisks (masked keys)
+LONG_STRINGS=$(git diff --cached --diff-filter=ACM | grep -E '^[+].*[0-9a-zA-Z]{32,}' | grep -v '\*\*\*\*' | grep -v '^[+]\+\+\+' || true)
+
+# Pattern 2: VITE_ environment variables with values
+ENV_VARS=$(git diff --cached --diff-filter=ACM | grep -E '^[+].*VITE_[A-Z_]+=.{20,}' | grep -v '\*\*\*\*' | grep -v 'your_.*_key' | grep -v '<.*>' || true)
+
+# Pattern 3: Common secret keywords
+SECRET_KEYWORDS=$(git diff --cached --diff-filter=ACM | grep -iE '^[+].*(api[_-]?key|secret[_-]?key|access[_-]?token|auth[_-]?token).*[:=].*[0-9a-zA-Z]{20,}' | grep -v '\*\*\*\*' | grep -v 'your_' | grep -v '<.*>' || true)
+
+# Combine all findings
+ALL_FINDINGS=""
+if [ ! -z "$LONG_STRINGS" ]; then
+  ALL_FINDINGS="${ALL_FINDINGS}⚠️  Suspicious long alphanumeric strings detected:\n${LONG_STRINGS}\n\n"
+fi
+
+if [ ! -z "$ENV_VARS" ]; then
+  ALL_FINDINGS="${ALL_FINDINGS}⚠️  VITE_ environment variables with values detected:\n${ENV_VARS}\n\n"
+fi
+
+if [ ! -z "$SECRET_KEYWORDS" ]; then
+  ALL_FINDINGS="${ALL_FINDINGS}⚠️  Secret keywords with values detected:\n${SECRET_KEYWORDS}\n\n"
+fi
+
+# If any findings, reject commit
+if [ ! -z "$ALL_FINDINGS" ]; then
+  echo "❌ ERROR: Potential secrets detected in staged files!"
+  echo ""
+  echo "$ALL_FINDINGS"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔒 Security Policy:"
+  echo "  - API keys must ONLY be in .env file (git-ignored)"
+  echo "  - Documentation must use masked format: xxxx**********************xxxx"
+  echo "  - Add note: '실제 키는 .env 파일 참조'"
+  echo ""
+  echo "📝 To bypass this check (NOT recommended):"
+  echo "  git commit --no-verify"
+  echo ""
+  echo "📚 See CONTRIBUTING.md for security guidelines"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  exit 1
+fi
+
+echo "✅ No exposed secrets detected"
+echo "✅ Commit allowed"
+exit 0

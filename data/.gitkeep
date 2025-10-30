@@ -1,0 +1,6 @@
+# Data directory for Phase 6: Weather Accuracy Tracking
+#
+# Structure:
+# - predictions/  : Tomorrow's weather forecasts (collected at 00:00 UTC)
+# - observations/ : Today's actual weather (collected at 00:30 UTC)
+# - analysis/     : Weekly AI analysis results (collected every Monday 01:00 UTC)
