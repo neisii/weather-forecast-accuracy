@@ -6,7 +6,7 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  base: process.env.NODE_ENV === "production" ? "/toy-5/" : "/",
+  base: process.env.NODE_ENV === "production" ? "/toy-5/" : "/", // GitHub 저장소명: toy-5, 로컬 폴더명: playwright-project
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
