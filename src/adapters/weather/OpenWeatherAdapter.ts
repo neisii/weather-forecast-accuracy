@@ -122,15 +122,29 @@ export class OpenWeatherAdapter implements WeatherProvider {
   private config: WeatherProviderConfig;
   private baseUrl: string;
   private apiKey: string;
+  private useProxy: boolean;
+  private proxyBaseUrl: string;
 
   constructor(config: WeatherProviderConfig) {
     this.config = config;
+
+    // 프록시 사용 여부 확인
+    this.useProxy = import.meta.env.VITE_USE_PROXY === "true";
+    this.proxyBaseUrl = import.meta.env.VITE_PROXY_BASE_URL || "";
+
+    if (this.useProxy && !this.proxyBaseUrl) {
+      throw new Error("Proxy URL is required when USE_PROXY is enabled");
+    }
+
     this.baseUrl = config.baseUrl || "https://api.openweathermap.org/data/2.5";
 
-    if (!config.apiKey) {
-      throw new Error("OpenWeatherMap API key is required");
+    // 프록시 사용 시 API 키는 선택사항 (프록시가 처리)
+    if (!this.useProxy && !config.apiKey) {
+      throw new Error(
+        "OpenWeatherMap API key is required when not using proxy",
+      );
     }
-    this.apiKey = config.apiKey;
+    this.apiKey = config.apiKey || "";
   }
 
   /**
@@ -161,13 +175,22 @@ export class OpenWeatherAdapter implements WeatherProvider {
 
     try {
       // Make API request to forecast endpoint
-      const url = new URL(`${this.baseUrl}/forecast`);
-      url.searchParams.append("lat", cityCoord.lat.toString());
-      url.searchParams.append("lon", cityCoord.lon.toString());
-      url.searchParams.append("appid", this.apiKey);
-      url.searchParams.append("units", "metric");
-      url.searchParams.append("lang", "en");
-      url.searchParams.append("cnt", (days * 8).toString()); // 8 forecasts per day (3-hour intervals)
+      let url: URL;
+
+      if (this.useProxy) {
+        // 프록시 사용: 도시 이름으로 요청
+        url = new URL(`${this.proxyBaseUrl}/api/openweather/forecast`);
+        url.searchParams.append("city", cityCoord.name_en);
+      } else {
+        // 직접 API 호출
+        url = new URL(`${this.baseUrl}/forecast`);
+        url.searchParams.append("lat", cityCoord.lat.toString());
+        url.searchParams.append("lon", cityCoord.lon.toString());
+        url.searchParams.append("appid", this.apiKey);
+        url.searchParams.append("units", "metric");
+        url.searchParams.append("lang", "en");
+        url.searchParams.append("cnt", (days * 8).toString()); // 8 forecasts per day (3-hour intervals)
+      }
 
       const response = await fetch(url.toString(), {
         timeout: this.config.timeout || 10000,
@@ -225,12 +248,21 @@ export class OpenWeatherAdapter implements WeatherProvider {
 
     try {
       // Make API request
-      const url = new URL(`${this.baseUrl}/weather`);
-      url.searchParams.append("lat", cityCoord.lat.toString());
-      url.searchParams.append("lon", cityCoord.lon.toString());
-      url.searchParams.append("appid", this.apiKey);
-      url.searchParams.append("units", "metric");
-      url.searchParams.append("lang", "en");
+      let url: URL;
+
+      if (this.useProxy) {
+        // 프록시 사용: 도시 이름으로 요청
+        url = new URL(`${this.proxyBaseUrl}/api/openweather/current`);
+        url.searchParams.append("city", cityCoord.name_en);
+      } else {
+        // 직접 API 호출
+        url = new URL(`${this.baseUrl}/weather`);
+        url.searchParams.append("lat", cityCoord.lat.toString());
+        url.searchParams.append("lon", cityCoord.lon.toString());
+        url.searchParams.append("appid", this.apiKey);
+        url.searchParams.append("units", "metric");
+        url.searchParams.append("lang", "en");
+      }
 
       const response = await fetch(url.toString(), {
         timeout: this.config.timeout || 10000,
@@ -319,6 +351,11 @@ export class OpenWeatherAdapter implements WeatherProvider {
    * Validate configuration
    */
   async validateConfig(): Promise<boolean> {
+    // 프록시 사용 시에는 검증 건너뛰기 (프록시가 API 키 처리)
+    if (this.useProxy) {
+      return true;
+    }
+
     if (!this.apiKey) {
       throw new Error("API key is required");
     }

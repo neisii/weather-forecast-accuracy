@@ -73,6 +73,9 @@ export function createWeatherProvider(
   type: "mock" | "openweather" | "weatherapi" | "openmeteo",
   config?: WeatherProviderConfig,
 ): WeatherProvider {
+  // 프록시 사용 여부 확인
+  const useProxy = import.meta.env.VITE_USE_PROXY === "true";
+
   switch (type) {
     case "mock":
       return new MockWeatherAdapter(config);
@@ -82,10 +85,11 @@ export function createWeatherProvider(
       }
       return new OpenWeatherAdapter(config);
     case "weatherapi":
-      if (!config || !config.apiKey) {
+      // 프록시 사용 시 API 키 선택사항
+      if (!useProxy && (!config || !config.apiKey)) {
         throw new Error("WeatherAPIAdapter requires API key in configuration");
       }
-      return new WeatherAPIAdapter(config.apiKey);
+      return new WeatherAPIAdapter(config?.apiKey || "");
     case "openmeteo":
       return new OpenMeteoAdapter();
     default:

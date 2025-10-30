@@ -102,6 +102,18 @@ const BASE_URL = "https://api.open-meteo.com/v1/forecast";
  */
 export class OpenMeteoAdapter implements WeatherProvider {
   readonly name = "Open-Meteo";
+  private useProxy: boolean;
+  private proxyBaseUrl: string;
+
+  constructor() {
+    // 프록시 사용 여부 확인
+    this.useProxy = import.meta.env.VITE_USE_PROXY === "true";
+    this.proxyBaseUrl = import.meta.env.VITE_PROXY_BASE_URL || "";
+
+    if (this.useProxy && !this.proxyBaseUrl) {
+      throw new Error("Proxy URL is required when USE_PROXY is enabled");
+    }
+  }
 
   /**
    * Get weather forecast for a city (Phase 6: Accuracy Tracking)
@@ -121,24 +133,40 @@ export class OpenMeteoAdapter implements WeatherProvider {
 
     try {
       // 2. API 호출
-      const response = await axios.get<OpenMeteoForecastResponse>(BASE_URL, {
-        params: {
-          latitude: coordinates.lat,
-          longitude: coordinates.lon,
-          daily: [
-            "weather_code",
-            "temperature_2m_max",
-            "temperature_2m_min",
-            "apparent_temperature_max",
-            "apparent_temperature_min",
-            "precipitation_sum",
-            "precipitation_probability_max",
-            "wind_speed_10m_max",
-          ].join(","),
-          timezone: "auto",
-          forecast_days: days,
-        },
-      });
+      let response;
+
+      if (this.useProxy) {
+        // 프록시 사용
+        response = await axios.get<OpenMeteoForecastResponse>(
+          `${this.proxyBaseUrl}/api/openmeteo`,
+          {
+            params: {
+              lat: coordinates.lat,
+              lon: coordinates.lon,
+            },
+          },
+        );
+      } else {
+        // 직접 API 호출
+        response = await axios.get<OpenMeteoForecastResponse>(BASE_URL, {
+          params: {
+            latitude: coordinates.lat,
+            longitude: coordinates.lon,
+            daily: [
+              "weather_code",
+              "temperature_2m_max",
+              "temperature_2m_min",
+              "apparent_temperature_max",
+              "apparent_temperature_min",
+              "precipitation_sum",
+              "precipitation_probability_max",
+              "wind_speed_10m_max",
+            ].join(","),
+            timezone: "auto",
+            forecast_days: days,
+          },
+        });
+      }
 
       // 3. 응답 → 도메인 타입 변환
       return this.transformForecastToDomain(
@@ -183,20 +211,36 @@ export class OpenMeteoAdapter implements WeatherProvider {
 
     try {
       // 2. API 호출
-      const response = await axios.get<OpenMeteoResponse>(BASE_URL, {
-        params: {
-          latitude: coordinates.lat,
-          longitude: coordinates.lon,
-          current: [
-            "temperature_2m",
-            "relative_humidity_2m",
-            "apparent_temperature",
-            "weather_code",
-            "wind_speed_10m",
-          ].join(","),
-          timezone: "auto",
-        },
-      });
+      let response;
+
+      if (this.useProxy) {
+        // 프록시 사용
+        response = await axios.get<OpenMeteoResponse>(
+          `${this.proxyBaseUrl}/api/openmeteo`,
+          {
+            params: {
+              lat: coordinates.lat,
+              lon: coordinates.lon,
+            },
+          },
+        );
+      } else {
+        // 직접 API 호출
+        response = await axios.get<OpenMeteoResponse>(BASE_URL, {
+          params: {
+            latitude: coordinates.lat,
+            longitude: coordinates.lon,
+            current: [
+              "temperature_2m",
+              "relative_humidity_2m",
+              "apparent_temperature",
+              "weather_code",
+              "wind_speed_10m",
+            ].join(","),
+            timezone: "auto",
+          },
+        });
+      }
 
       // 3. 응답 → 도메인 타입 변환
       return this.transformToDomain(response.data, city, coordinates.country);

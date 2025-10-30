@@ -144,9 +144,23 @@ const MONTHLY_LIMIT = 1_000_000;
 export class WeatherAPIAdapter implements WeatherProvider {
   readonly name = "WeatherAPI.com";
   private apiKey: string;
+  private useProxy: boolean;
+  private proxyBaseUrl: string;
 
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
+    // 프록시 사용 여부 확인
+    this.useProxy = import.meta.env.VITE_USE_PROXY === "true";
+    this.proxyBaseUrl = import.meta.env.VITE_PROXY_BASE_URL || "";
+
+    if (this.useProxy && !this.proxyBaseUrl) {
+      throw new Error("Proxy URL is required when USE_PROXY is enabled");
+    }
+
+    // 프록시 사용 시 API 키는 선택사항
+    if (!this.useProxy && !apiKey) {
+      throw new Error("WeatherAPI key is required when not using proxy");
+    }
+    this.apiKey = apiKey || "";
   }
 
   /**
@@ -161,17 +175,32 @@ export class WeatherAPIAdapter implements WeatherProvider {
       const cityData = getCityCoordinate(cityName);
       const queryCity = cityData?.name_en || cityName;
 
-      const response = await axios.get<WeatherAPIForecastResponse>(
-        `${BASE_URL}/forecast.json`,
-        {
-          params: {
-            key: this.apiKey,
-            q: queryCity,
-            days: days,
-            aqi: "no",
+      let response;
+
+      if (this.useProxy) {
+        // 프록시 사용
+        response = await axios.get<WeatherAPIForecastResponse>(
+          `${this.proxyBaseUrl}/api/weatherapi/forecast`,
+          {
+            params: {
+              city: queryCity,
+            },
           },
-        },
-      );
+        );
+      } else {
+        // 직접 API 호출
+        response = await axios.get<WeatherAPIForecastResponse>(
+          `${BASE_URL}/forecast.json`,
+          {
+            params: {
+              key: this.apiKey,
+              q: queryCity,
+              days: days,
+              aqi: "no",
+            },
+          },
+        );
+      }
 
       // Quota 증가
       this.incrementQuota();
@@ -221,16 +250,31 @@ export class WeatherAPIAdapter implements WeatherProvider {
       const cityData = getCityCoordinate(city);
       const queryCity = cityData?.name_en || city;
 
-      const response = await axios.get<WeatherAPIResponse>(
-        `${BASE_URL}/current.json`,
-        {
-          params: {
-            key: this.apiKey,
-            q: queryCity, // 영문명으로 API 호출
-            aqi: "no", // Air Quality Index 제외
+      let response;
+
+      if (this.useProxy) {
+        // 프록시 사용
+        response = await axios.get<WeatherAPIResponse>(
+          `${this.proxyBaseUrl}/api/weatherapi/current`,
+          {
+            params: {
+              city: queryCity,
+            },
           },
-        },
-      );
+        );
+      } else {
+        // 직접 API 호출
+        response = await axios.get<WeatherAPIResponse>(
+          `${BASE_URL}/current.json`,
+          {
+            params: {
+              key: this.apiKey,
+              q: queryCity, // 영문명으로 API 호출
+              aqi: "no", // Air Quality Index 제외
+            },
+          },
+        );
+      }
 
       // Quota 증가
       this.incrementQuota();
@@ -400,6 +444,11 @@ export class WeatherAPIAdapter implements WeatherProvider {
    * Provider 설정 검증
    */
   async validateConfig(): Promise<boolean> {
+    // 프록시 사용 시에는 검증 건너뛰기 (프록시가 API 키 처리)
+    if (this.useProxy) {
+      return true;
+    }
+
     if (!this.apiKey || this.apiKey.trim() === "") {
       throw new Error("WeatherAPI.com API 키가 설정되지 않았습니다.");
     }
