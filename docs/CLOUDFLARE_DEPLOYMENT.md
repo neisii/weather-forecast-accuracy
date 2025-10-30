@@ -246,33 +246,140 @@ Provider 수: 3개
 
 ---
 
+## ✅ Phase 2: 프론트엔드 통합 완료
+
+**완료일**: 2025-10-30  
+**상태**: ✅ 통합 완료 및 테스트 통과
+
+### 수정된 파일
+
+1. **`02-weather-app/.env`**
+   ```bash
+   # Cloudflare Workers Proxy URL
+   VITE_PROXY_BASE_URL=https://weather-proxy.neisii.workers.dev
+   
+   # 프록시 사용 여부
+   VITE_USE_PROXY=true
+   
+   # Legacy: Direct API keys (주석처리)
+   # VITE_OPENWEATHER_API_KEY=...
+   # VITE_WEATHERAPI_API_KEY=...
+   ```
+
+2. **`OpenWeatherAdapter.ts`**
+   - Constructor에서 프록시 모드 체크 추가
+   - `validateConfig()` 메서드에서 프록시 사용 시 검증 건너뛰기
+   - API 호출 시 프록시/직접 호출 조건부 분기
+   
+3. **`WeatherAPIAdapter.ts`**
+   - Constructor에서 프록시 모드 체크 추가
+   - `validateConfig()` 메서드에서 프록시 사용 시 검증 건너뛰기
+   - API 호출 시 프록시/직접 호출 조건부 분기
+
+4. **`OpenMeteoAdapter.ts`**
+   - Constructor 추가 (프록시 모드 체크)
+   - API 호출 시 프록시/직접 호출 조건부 분기
+
+5. **`WeatherProvider.ts`**
+   - 팩토리 함수에서 프록시 모드 확인
+   - 프록시 사용 시 API 키 선택사항으로 변경
+
+6. **`weather-proxy/src/handlers/openmeteo.ts`**
+   - API 파라미터 수정 (`current_weather=true` → `current=...`)
+   - 프론트엔드 어댑터가 기대하는 응답 형식으로 통일
+
+### 코드 변경 예시
+
+**Before (직접 API 호출)**:
+```typescript
+const url = new URL(`https://api.openweathermap.org/data/2.5/weather`);
+url.searchParams.append("lat", lat);
+url.searchParams.append("lon", lon);
+url.searchParams.append("appid", this.apiKey);
+url.searchParams.append("units", "metric");
+```
+
+**After (프록시 사용)**:
+```typescript
+if (this.useProxy) {
+  // 프록시: 간단한 city 파라미터만
+  url = new URL(`${this.proxyBaseUrl}/api/openweather/current`);
+  url.searchParams.append("city", cityName);
+} else {
+  // 직접 API 호출 (이전 방식 유지)
+  url = new URL(`https://api.openweathermap.org/data/2.5/weather`);
+  url.searchParams.append("lat", lat);
+  url.searchParams.append("lon", lon);
+  url.searchParams.append("appid", this.apiKey);
+  url.searchParams.append("units", "metric");
+}
+```
+
+### 통합 테스트 결과
+
+**테스트 환경**: `http://localhost:5173/`  
+**테스트 도시**: 부산
+
+| Provider | 상태 | API 키 노출 | 프록시 URL | 응답 시간 |
+|----------|------|------------|-----------|----------|
+| OpenWeatherMap | ✅ | ❌ 없음 | `weather-proxy.neisii.workers.dev/api/openweather/current?city=Busan` | ~200ms |
+| WeatherAPI.com | ✅ | ❌ 없음 | `weather-proxy.neisii.workers.dev/api/weatherapi/current?city=Busan` | ~180ms |
+| Open-Meteo | ✅ | ❌ 없음 | `weather-proxy.neisii.workers.dev/api/openmeteo?lat=...&lon=...` | ~150ms |
+
+**모든 프로바이더 정상 작동!**
+
+### 발견 및 수정된 이슈
+
+#### Issue 1: API 키 검증 오류
+**증상**: `Failed to switch provider: API key is required`  
+**원인**: `validateConfig()`가 프록시 모드에서도 API 키 요구  
+**해결**: 프록시 모드일 때 검증 건너뛰기 로직 추가
+```typescript
+async validateConfig(): Promise<boolean> {
+  if (this.useProxy) {
+    return true; // 프록시가 API 키 처리
+  }
+  // ... 기존 검증 로직
+}
+```
+
+#### Issue 2: WeatherAPI 팩토리 오류
+**증상**: `WeatherAPIAdapter requires API key in configuration`  
+**원인**: `createWeatherProvider()` 팩토리 함수가 프록시 모드 미지원  
+**해결**: 팩토리에서 프록시 모드 체크 추가
+```typescript
+const useProxy = import.meta.env.VITE_USE_PROXY === "true";
+if (!useProxy && (!config || !config.apiKey)) {
+  throw new Error("API key required");
+}
+return new WeatherAPIAdapter(config?.apiKey || "");
+```
+
+#### Issue 3: Open-Meteo 응답 파싱 오류
+**증상**: `Cannot read properties of undefined (reading 'time')`  
+**원인**: 프록시가 잘못된 API 파라미터 사용 (`current_weather=true`)  
+**해결**: 올바른 파라미터로 수정 및 재배포
+```typescript
+// Before: current_weather=true&hourly=...
+// After: current=temperature_2m,relative_humidity_2m,...
+```
+
+### 커밋 정보
+
+**커밋 해시**: `7086364`  
+**커밋 메시지**: `feat(weather-app): integrate Cloudflare Workers proxy with frontend`  
+**변경 파일**: 5개 (adapters 3개 + provider + proxy handler)
+
+---
+
 ## 🎯 다음 단계
-
-### Phase 2: 프론트엔드 통합
-
-**목표**: 기존 Adapter를 프록시 사용하도록 수정
-
-**변경 필요 파일**:
-1. `OpenWeatherAdapter.ts`
-2. `WeatherAPIAdapter.ts`
-3. `OpenMeteoAdapter.ts`
-4. `.env` 파일 (프록시 URL 추가)
-
-**Before**:
-```typescript
-const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`;
-```
-
-**After**:
-```typescript
-const url = `https://weather-proxy.neisii.workers.dev/api/openweather/current?city=${city}`;
-```
 
 ### Phase 3: GitHub Pages 재배포
 
-- 프론트엔드 수정 완료 후
-- GitHub Pages 재배포
-- E2E 테스트
+- [ ] 프로덕션 빌드 생성
+- [ ] GitHub Pages 재배포
+- [ ] E2E 테스트 (프로덕션 환경)
+- [ ] 성능 모니터링
 
 ---
 
@@ -370,12 +477,18 @@ echo "new_key" | npx wrangler secret put OPENWEATHER_API_KEY
 - [x] 성능 확인 (평균 180ms)
 - [x] 테스트 페이지 생성
 
+### 완료된 작업
+
+- [x] 프론트엔드 Adapter 수정
+- [x] 환경 변수 설정
+- [x] 로컬 환경 테스트 (모든 프로바이더 통과)
+- [x] 프록시 핸들러 버그 수정 (Open-Meteo)
+- [x] Git 커밋 및 푸시
+
 ### 대기 중인 작업
 
-- [ ] 프론트엔드 Adapter 수정
-- [ ] 환경 변수 설정
 - [ ] GitHub Pages 재배포
-- [ ] E2E 테스트
+- [ ] E2E 테스트 (프로덕션)
 - [ ] PROGRESS.md 업데이트
 
 ---
