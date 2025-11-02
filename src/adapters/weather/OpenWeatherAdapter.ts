@@ -1,4 +1,5 @@
 import type { WeatherProvider } from "./WeatherProvider";
+import { getEnv } from "./WeatherProvider";
 import type {
   CurrentWeather,
   QuotaInfo,
@@ -129,8 +130,8 @@ export class OpenWeatherAdapter implements WeatherProvider {
     this.config = config;
 
     // 프록시 사용 여부 확인
-    this.useProxy = import.meta.env.VITE_USE_PROXY === "true";
-    this.proxyBaseUrl = import.meta.env.VITE_PROXY_BASE_URL || "";
+    this.useProxy = getEnv("VITE_USE_PROXY") === "true";
+    this.proxyBaseUrl = getEnv("VITE_PROXY_BASE_URL") || "";
 
     if (this.useProxy && !this.proxyBaseUrl) {
       throw new Error("Proxy URL is required when USE_PROXY is enabled");

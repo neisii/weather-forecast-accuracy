@@ -15,6 +15,23 @@ import { OpenMeteoAdapter } from "./OpenMeteoAdapter";
 export type { CurrentWeather, QuotaInfo, WeatherForecast };
 
 /**
+ * Get environment variable safely in both Vite and Node.js environments
+ * @param key - Environment variable key
+ * @returns Value or undefined
+ */
+export function getEnv(key: string): string | undefined {
+  // Vite environment (local dev + GitHub Pages build)
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env[key];
+  }
+  // Node.js environment (GitHub Actions scripts)
+  if (typeof process !== "undefined" && process.env) {
+    return process.env[key];
+  }
+  return undefined;
+}
+
+/**
  * Weather provider interface
  *
  * All weather API adapters must implement this interface to ensure
@@ -74,7 +91,7 @@ export function createWeatherProvider(
   config?: WeatherProviderConfig,
 ): WeatherProvider {
   // 프록시 사용 여부 확인
-  const useProxy = import.meta.env.VITE_USE_PROXY === "true";
+  const useProxy = getEnv("VITE_USE_PROXY") === "true";
 
   switch (type) {
     case "mock":
