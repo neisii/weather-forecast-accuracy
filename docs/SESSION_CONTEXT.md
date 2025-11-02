@@ -301,6 +301,41 @@ interface QuotaInfo {
 
 **Learning**: Be explicit about API versioning when multiple versions exist
 
+### Error 4: Node.js Environment Variable Compatibility (2025-11-02)
+**Mistake**: Used `import.meta.env.VITE_USE_PROXY` in adapter constructors without checking environment
+
+**User Report**: GitHub Actions workflows (collect-predictions, collect-observations) failing with:
+```
+TypeError: Cannot read properties of undefined (reading 'VITE_USE_PROXY')
+```
+
+**Root Cause**: 
+- `import.meta.env` only exists in Vite environments (local dev, GitHub Pages build)
+- GitHub Actions runs scripts using Node.js directly (`npx tsx`)
+- Proxy feature added in Phase 11-12 didn't account for Node.js compatibility
+
+**Fix**: Created universal `getEnv()` helper function in WeatherProvider.ts:
+```typescript
+export function getEnv(key: string): string | undefined {
+  // Vite environment (local dev + GitHub Pages build)
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env[key];
+  }
+  // Node.js environment (GitHub Actions scripts)
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key];
+  }
+  return undefined;
+}
+```
+
+**Learning**: When adding environment-specific features, always consider all runtime contexts:
+- Local development (Vite dev server)
+- Production build (Vite build)
+- Node.js scripts (GitHub Actions, data collection)
+
+**Commit**: `5ab47c3` - fix(weather-app): add environment variable helper for Node.js compatibility
+
 ---
 
 ## Code Patterns & Standards
@@ -633,6 +668,10 @@ To continue this project in a new Claude session:
   - Impact: No problem for 30-day accuracy tracking
   - File created: `data/predictions/2025-10-14.json`
   - Execution time: ~12 seconds
+- **Collection Failure**: 2025-11-02 workflows failed (Node.js env compatibility issue)
+  - Issue: `import.meta.env` undefined in Node.js/tsx runtime
+  - Fixed: Added `getEnv()` helper for cross-environment compatibility
+  - Commit: `5ab47c3` (2025-11-02)
 - **Next Milestone**: 7 days of data for initial meaningful analysis
 - **Expected Behavior**: Daily collection with 0-60 minute delays (acceptable)
 

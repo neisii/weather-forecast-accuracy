@@ -119,6 +119,20 @@
 - ⚠️ GitHub Actions macOS sleep 이슈 (해결 중)
 - 📊 실제 데이터 수집 진행 중
 
+#### 트러블슈팅 (2025-11-02)
+**문제**: GitHub Actions 워크플로우 실패
+- `collect-predictions.yml`: TypeError: Cannot read properties of undefined (reading 'VITE_USE_PROXY')
+- `collect-observations.yml`: 동일한 에러
+
+**원인**:
+- Phase 11-12에서 Cloudflare Workers 프록시 기능 추가 시 `import.meta.env` 사용
+- Node.js 환경 (GitHub Actions)에서는 `import.meta.env` 미지원
+
+**해결책**:
+- `getEnv()` 헬퍼 함수 추가 (Vite + Node.js 환경 모두 지원)
+- 4개 어댑터 파일 업데이트 (WeatherProvider, OpenWeather, WeatherAPI, OpenMeteo)
+- **커밋**: `5ab47c3` - fix(weather-app): add environment variable helper for Node.js compatibility
+
 #### 테스트 결과
 - Unit: 80/80 통과
 - E2E: 5/5 통과 (accuracy 페이지 미포함)
