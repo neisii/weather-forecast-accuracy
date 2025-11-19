@@ -1,0 +1,47 @@
+name: Weekly Weather Accuracy Analysis
+
+# Schedule: Every Monday at 01:00 UTC (10:00 KST)
+on:
+  schedule:
+    - cron: "0 1 * * 1" # Weekly on Monday 01:00 UTC
+  workflow_dispatch: # Allow manual trigger for testing
+
+permissions:
+  contents: write
+
+jobs:
+  analyze-accuracy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AI-powered accuracy analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx tsx --tsconfig tsconfig.app.json scripts/weekly-analysis.ts
+
+      - name: Commit analysis results
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/analysis/*.json
+          git diff --staged --quiet || git commit -m "chore: weekly accuracy analysis for week-$(date -u +%Y-W%V)"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

@@ -36,9 +36,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: |
-          cd 02-weather-app
-          npm ci
+        run: npm ci
 
       - name: Install tsx (TypeScript executor)
         run: npm install -g tsx
@@ -48,14 +46,11 @@ jobs:
           AUTO_COMMIT: ${{ github.event.inputs.auto_commit || 'true' }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          cd 02-weather-app
-          tsx scripts/update-ai-weights.ts
+        run: tsx scripts/update-ai-weights.ts
 
       - name: Check for changes
         id: check_changes
         run: |
-          cd 02-weather-app
           if [[ -n $(git status --porcelain data/ai-weights/) ]]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
@@ -65,7 +60,6 @@ jobs:
       - name: Commit and push changes
         if: steps.check_changes.outputs.has_changes == 'true'
         run: |
-          cd 02-weather-app
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
@@ -86,8 +80,6 @@ jobs:
       - name: Create summary
         if: always()
         run: |
-          cd 02-weather-app
-
           if [ -f "data/ai-weights/latest.json" ]; then
             echo "## 🤖 AI Weights Update Summary" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -129,6 +121,6 @@ jobs:
         with:
           name: ai-weights-${{ github.run_number }}
           path: |
-            02-weather-app/data/ai-weights/
-            02-weather-app/data/analysis/latest-optimization.json
+            data/ai-weights/
+            data/analysis/latest-optimization.json
           retention-days: 90
