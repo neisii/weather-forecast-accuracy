@@ -1,11 +1,110 @@
-# 프로젝트 2: 날씨 검색 앱
+# Weather Forecast Accuracy
+
+**날씨 예보 정확도 비교 및 AI 예측 앱**
+
+여러 날씨 API 제공자(OpenWeatherMap, WeatherAPI.com, Open-Meteo)의 예보 정확도를 비교하고, AI 기반 날씨 예측 및 자전거 복장 추천 기능을 제공하는 Vue 3 애플리케이션입니다.
 
 ## 📋 프로젝트 개요
 
-**난이도**: ⭐⭐ 초중급  
-**개발 시간**: 2-3일  
-**Playwright 학습 효과**: ⭐⭐⭐  
+**난이도**: ⭐⭐ 초중급
+**개발 시간**: 2-3일
+**Playwright 학습 효과**: ⭐⭐⭐
 **실무 유사도**: ⭐⭐⭐
+
+## 🏗️ 저장소 구조
+
+이 저장소는 **모노레포(Monorepo)** 구조로 프론트엔드와 백엔드 프록시를 함께 관리합니다:
+
+```
+weather-forecast-accuracy/
+├── src/                    # Vue 3 프론트엔드 (날씨 앱)
+│   ├── adapters/          # Weather API 어댑터
+│   ├── components/        # Vue 컴포넌트
+│   ├── services/          # 비즈니스 로직
+│   └── stores/            # Pinia 상태 관리
+├── weather-proxy/          # Cloudflare Workers 백엔드 프록시
+│   ├── src/
+│   │   ├── handlers/      # API 프록시 핸들러
+│   │   └── utils/         # CORS 등 유틸리티
+│   ├── wrangler.toml      # Cloudflare 설정
+│   └── package.json
+├── data/                   # 수집된 날씨 데이터
+│   ├── predictions/       # 예측 데이터
+│   ├── observations/      # 실제 관측 데이터
+│   └── analysis/          # 정확도 분석
+├── .github/workflows/      # CI/CD
+├── package.json           # 프론트엔드 의존성
+├── .env                   # 환경 변수 (프록시 URL)
+└── README.md
+```
+
+## 🚀 빠른 시작
+
+### 1. 프론트엔드 개발 서버
+
+```bash
+# 의존성 설치
+npm install
+
+# .env 파일 생성 (프록시 모드)
+cat > .env << 'EOF'
+VITE_PROXY_BASE_URL=https://weather-proxy.neisii.workers.dev
+VITE_USE_PROXY=true
+EOF
+
+# 개발 서버 실행
+npm run dev
+```
+
+앱이 `http://localhost:5173`에서 실행됩니다.
+
+### 2. 백엔드 프록시 배포 (선택사항)
+
+프록시는 이미 Cloudflare에 배포되어 있습니다 (`https://weather-proxy.neisii.workers.dev`).
+
+자체 프록시를 배포하려면:
+
+```bash
+cd weather-proxy
+
+# Cloudflare 로그인
+npx wrangler login
+
+# API 키 설정 (Secrets)
+echo "YOUR_KEY" | npx wrangler secret put OPENWEATHER_API_KEY
+echo "YOUR_KEY" | npx wrangler secret put WEATHERAPI_API_KEY
+
+# 배포
+npm run deploy
+```
+
+자세한 내용은 [`weather-proxy/README.md`](weather-proxy/README.md)를 참조하세요.
+
+## ⚙️ 환경 변수 설정
+
+### 옵션 1: 프록시 모드 (권장)
+
+```bash
+# .env
+VITE_PROXY_BASE_URL=https://weather-proxy.neisii.workers.dev
+VITE_USE_PROXY=true
+```
+
+**장점:**
+- 🔒 API 키가 클라이언트에 노출되지 않음
+- ⚡ Cloudflare Edge Network로 빠른 응답
+- 💰 무료 (Free Tier)
+
+### 옵션 2: 직접 API 호출
+
+```bash
+# .env
+VITE_USE_PROXY=false
+VITE_OPENWEATHER_API_KEY=your_openweather_key
+VITE_WEATHERAPI_API_KEY=your_weatherapi_key
+```
+
+**주의:** API 키가 클라이언트 번들에 포함됩니다 (보안 위험).
 
 ## 📸 프로젝트 스크린샷
 
