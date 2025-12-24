@@ -1,0 +1,30 @@
+{
+  "date": "2025-12-24",
+  "collected_at": "2025-12-24T01:41:02.999Z",
+  "target_date": "2025-12-25",
+  "city": "서울",
+  "predictions": {
+    "openweather": {
+      "error": "Failed to switch provider: OpenWeatherMap API key is required when not using proxy",
+      "collected_at": "2025-12-24T01:41:02.999Z"
+    },
+    "weatherapi": {
+      "error": "Failed to switch provider: WeatherAPIAdapter requires API key in configuration",
+      "collected_at": "2025-12-24T01:41:02.999Z"
+    },
+    "openmeteo": {
+      "temp_max": -1.5,
+      "temp_min": -10.6,
+      "temp_day": -6.05,
+      "temp_night": -10.6,
+      "condition_main": "맑음",
+      "condition_description": "맑음",
+      "condition_description_ko": "맑음",
+      "condition_icon": "01d",
+      "humidity": 0,
+      "wind_speed": 3.7222222222222223,
+      "precipitation_probability": 0,
+      "predicted_at": "2025-12-24T01:41:03.658Z"
+    }
+  }
+}
