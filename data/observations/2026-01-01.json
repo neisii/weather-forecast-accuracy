@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-01",
+  "collected_at": "2026-01-01T02:41:48.588Z",
+  "city": "서울",
+  "observations": {
+    "openweather": {
+      "error": "Failed to switch provider: OpenWeatherMap API key is required when not using proxy",
+      "observed_at": "2026-01-01T02:41:48.588Z"
+    },
+    "weatherapi": {
+      "error": "Failed to switch provider: WeatherAPIAdapter requires API key in configuration",
+      "observed_at": "2026-01-01T02:41:48.588Z"
+    },
+    "openmeteo": {
+      "temp": -8.2,
+      "feels_like": -13.4,
+      "temp_min": -8.2,
+      "temp_max": -8.2,
+      "condition_main": "맑음",
+      "condition_description": "맑음",
+      "condition_description_ko": "맑음",
+      "condition_icon": "01n",
+      "humidity": 33,
+      "pressure": 1013,
+      "wind_speed": 2.5277777777777777,
+      "wind_direction": 0,
+      "cloudiness": 0,
+      "visibility": 10000,
+      "uv_index": 0,
+      "observed_at": "2026-01-01T11:30:00.000Z",
+      "location": {
+        "name": "서울",
+        "country": "KR",
+        "lat": 37.55,
+        "lon": 127
+      }
+    }
+  }
+}
