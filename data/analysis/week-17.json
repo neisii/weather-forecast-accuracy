@@ -1,0 +1,65 @@
+{
+  "week": 17,
+  "analysis_time": "2026-02-09T03:46:17.067Z",
+  "period": {
+    "start": "2026-02-02",
+    "end": "2026-02-08",
+    "days": 7
+  },
+  "data_quality": {
+    "predictions_found": 7,
+    "observations_found": 7,
+    "complete_days": 7
+  },
+  "rankings": [
+    {
+      "rank": 1,
+      "provider": "openmeteo",
+      "sample_size": 7,
+      "avg_overall_score": 52,
+      "avg_temp_error": 2.2,
+      "avg_humidity_error": 47.1,
+      "avg_wind_error": 0.9,
+      "condition_match_rate": 14.3
+    },
+    {
+      "rank": 2,
+      "provider": "openweather",
+      "sample_size": 0,
+      "avg_overall_score": 0,
+      "avg_temp_error": 0,
+      "condition_match_rate": 0
+    },
+    {
+      "rank": 3,
+      "provider": "weatherapi",
+      "sample_size": 0,
+      "avg_overall_score": 0,
+      "avg_temp_error": 0,
+      "condition_match_rate": 0
+    }
+  ],
+  "detailed_stats": {
+    "openweather": {
+      "sample_size": 0,
+      "avg_overall_score": 0,
+      "avg_temp_error": 0,
+      "condition_match_rate": 0
+    },
+    "weatherapi": {
+      "sample_size": 0,
+      "avg_overall_score": 0,
+      "avg_temp_error": 0,
+      "condition_match_rate": 0
+    },
+    "openmeteo": {
+      "sample_size": 7,
+      "avg_overall_score": 52,
+      "avg_temp_error": 2.2,
+      "avg_humidity_error": 47.1,
+      "avg_wind_error": 0.9,
+      "condition_match_rate": 14.3
+    }
+  },
+  "ai_insights": null
+}
